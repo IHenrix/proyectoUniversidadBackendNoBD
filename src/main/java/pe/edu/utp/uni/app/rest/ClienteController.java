@@ -17,7 +17,6 @@ public class ClienteController {
         clientes.put(currentId++, nombre);
         return "Cliente guardado: " + nombre;
     }
-
     @GetMapping
     public Map<Integer, String> listarClientes() {
         return clientes;
