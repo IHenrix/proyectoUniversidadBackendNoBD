@@ -9,14 +9,14 @@ public class Usuario {
     public String materno;
     public String sexo;
     public String correo;
-    public Integer rol_id;
+    public String codigo;
+    public Long rol_id;
     public Boolean activo;
 
     public Usuario() {}
 
-    public Usuario(Long id, String username, String passw, String nombre,
-                   String paterno, String materno, String sexo, String correo,
-                   Integer rol_id, Boolean activo) {
+    public Usuario(Long id, String username, String passw, String nombre, String paterno, String materno,
+                   String sexo, String correo, String codigo, Long rol_id, Boolean activo) {
         this.id = id;
         this.username = username;
         this.passw = passw;
@@ -25,6 +25,7 @@ public class Usuario {
         this.materno = materno;
         this.sexo = sexo;
         this.correo = correo;
+        this.codigo = codigo;
         this.rol_id = rol_id;
         this.activo = activo;
     }

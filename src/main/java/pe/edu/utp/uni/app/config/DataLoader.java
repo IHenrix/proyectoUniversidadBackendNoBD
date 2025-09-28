@@ -22,9 +22,9 @@ public class DataLoader {
         return args -> {
             rolRepo.save(new Rol(null, "ALUMNO"));
             rolRepo.save(new Rol(null, "PROFESOR"));
-            userRepo.guardarUsuario(new Usuario(null, "RPRADA", "pedrito", "RICARDO ENRIQUE", "PRADA", "GUERRA", "M", "rprada@hotmail.com", 2, true));
-            userRepo.guardarUsuario(new Usuario(null, "JMORALES", "Marco1415", "JUAN JOSÉ", "MORALES", "VELASQUEZ", "M", "jmorales@hotmail.com", 1, true));
-            userRepo.guardarUsuario(new Usuario(null, "NLOPEZO", "Marco1415", "NIKOL", "LOPEZ", "OCHOA", "F", "nlopezo@hotmail.com", 1, true));
+            userRepo.guardarUsuario(new Usuario(null, "RPRADA", "pedrito", "RICARDO ENRIQUE", "PRADA", "GUERRA", "M", "rprada@hotmail.com","", 2L, true));
+            userRepo.guardarUsuario(new Usuario(null, "JMORALES", "Marco1415", "JUAN JOSÉ", "MORALES", "VELASQUEZ", "M", "jmorales@hotmail.com","U23316357", 1L, true));
+            userRepo.guardarUsuario(new Usuario(null, "NLOPEZO", "Marco1415", "NIKOL", "LOPEZ", "OCHOA", "F", "nlopezo@hotmail.com","U23316358", 1L, true));
 
             Curso c1 = cursoRepo.save(new Curso(null, "Taller de programación (1I50N)", 4.0, 3.0, "P"));
             Curso c2 = cursoRepo.save(new Curso(null, "Herramientas informáticas para la toma de decisiones (1I04N)", 2.0, 2.0, "V"));
