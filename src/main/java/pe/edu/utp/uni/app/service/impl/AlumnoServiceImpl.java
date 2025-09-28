@@ -24,8 +24,6 @@ public class AlumnoServiceImpl implements AlumnoService {
     private final CursoRepository cursoRepository;
     private final DocenteCursoRepository docenteCursoRepository;
     private final UsuarioRepository usuarioRepository;
-
-
     @Override
     public List<CursoAlumnoResponse> listarCursosPorUsuario(Long usuarioId) {
         List<AlumnoCurso> acs = alumnoCursoRepository.listByUsuarioId(usuarioId);
