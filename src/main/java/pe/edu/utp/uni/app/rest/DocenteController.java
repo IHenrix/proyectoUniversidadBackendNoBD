@@ -3,6 +3,7 @@ package pe.edu.utp.uni.app.rest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import pe.edu.utp.uni.app.request.RegistrarEditarNotasRequest;
 import pe.edu.utp.uni.app.response.AlumnoListaCursoResponse;
 import pe.edu.utp.uni.app.response.CursoDocenteResponse;
 import pe.edu.utp.uni.app.service.DocenteService;
@@ -25,5 +26,11 @@ public class DocenteController {
     public ResponseEntity<?> listarAlumnosPorCursos(@RequestParam("cursoId") Long cursoId) {
         List<AlumnoListaCursoResponse> usuarios = docenteService.listarAlumnosPorCurso(cursoId);
         return ResponseEntity.ok(usuarios);
+    }
+
+    @PostMapping("/registrar-editar-notas")
+    public ResponseEntity<?> registrarEditarNotas(@RequestBody RegistrarEditarNotasRequest req) {
+        docenteService.registrarOEditarNotas(req.alumnoCursoId, req.cursoId, req.notas);
+        return ResponseEntity.ok(java.util.Map.of("message","Notas registradas o editadas con éxito"));
     }
 }

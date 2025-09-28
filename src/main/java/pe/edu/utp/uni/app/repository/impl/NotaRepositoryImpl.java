@@ -41,4 +41,20 @@ public class NotaRepositoryImpl implements NotaRepository {
             lock.readLock().unlock();
         }
     }
+
+    @Override
+    public void deleteByAlumnoCursoAndCriterio(Long alumnoCursoId, Long criterioId) {
+        lock.writeLock().lock();
+        try {
+            Map<Long, Nota> m = byAlumnoCursoThenCriterio.get(alumnoCursoId);
+            if (m != null) {
+                Nota removed = m.remove(criterioId);
+                if (removed != null) store.remove(removed.id);
+                if (m.isEmpty()) byAlumnoCursoThenCriterio.remove(alumnoCursoId);
+            }
+        } finally {
+            lock.writeLock().unlock();
+        }
+    }
+
 }

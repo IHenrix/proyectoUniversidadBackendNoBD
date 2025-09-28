@@ -8,4 +8,5 @@ public interface AlumnoCursoRepository {
     AlumnoCurso save(AlumnoCurso ac);
     List<AlumnoCurso> listByUsuarioId(Long usuarioId);
     List<AlumnoCurso> listByCursoId(Long cursoId);
+    AlumnoCurso findById(Long id);
 }

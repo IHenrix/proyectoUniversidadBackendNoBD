@@ -25,14 +25,22 @@ public class DocenteCursoRepositoryImpl implements DocenteCursoRepository {
     public DocenteCurso save(DocenteCurso dc) {
         lock.writeLock().lock();
         try {
+            boolean isNew = (dc.id == null) || !store.containsKey(dc.id);
+
             if (dc.id == null) dc.id = seq.incrementAndGet();
             store.put(dc.id, dc);
-            docentesPorCurso.computeIfAbsent(dc.curso_id, k -> new SinglyLinkedList<>()).addLast(dc);
-            cursosPorDocente.computeIfAbsent(dc.usuario_id, k -> new CircularSinglyLinkedList<>()).addLast(dc);
+
+            if (isNew) {
+                docentesPorCurso
+                        .computeIfAbsent(dc.curso_id, k -> new SinglyLinkedList<>())
+                        .addLast(dc);
+                cursosPorDocente
+                        .computeIfAbsent(dc.usuario_id, k -> new CircularSinglyLinkedList<>())
+                        .addLast(dc);
+            }
             return dc;
         } finally { lock.writeLock().unlock(); }
     }
-
     @Override
     public List<DocenteCurso> listByCursoId(Long cursoId) {
         lock.readLock().lock();

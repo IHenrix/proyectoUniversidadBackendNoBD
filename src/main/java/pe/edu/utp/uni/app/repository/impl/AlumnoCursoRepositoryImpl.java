@@ -26,10 +26,14 @@ public class AlumnoCursoRepositoryImpl implements AlumnoCursoRepository {
     public AlumnoCurso save(AlumnoCurso ac) {
         lock.writeLock().lock();
         try {
+            boolean isNew = (ac.id == null) || !store.containsKey(ac.id);
             if (ac.id == null) ac.id = seq.incrementAndGet();
             store.put(ac.id, ac);
-            byUsuario.computeIfAbsent(ac.usuario_id, k -> new DoublyLinkedList<>()).addLast(ac);
-            byCurso.computeIfAbsent(ac.curso_id, k -> new SinglyLinkedList<>()).addLast(ac);
+
+            if (isNew) {
+                byUsuario.computeIfAbsent(ac.usuario_id, k -> new DoublyLinkedList<>()).addLast(ac);
+                byCurso.computeIfAbsent(ac.curso_id, k -> new SinglyLinkedList<>()).addLast(ac);
+            }
             return ac;
         } finally { lock.writeLock().unlock(); }
     }
@@ -57,4 +61,15 @@ public class AlumnoCursoRepositoryImpl implements AlumnoCursoRepository {
             return out;
         } finally { lock.readLock().unlock(); }
     }
+
+    @Override
+    public AlumnoCurso findById(Long id) {
+        lock.readLock().lock();
+        try {
+            return store.get(id);
+        } finally {
+            lock.readLock().unlock();
+        }
+    }
+
 }
