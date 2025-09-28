@@ -6,6 +6,7 @@ import pe.edu.utp.uni.app.repository.CriterioEvaluacionRepository;
 import pe.edu.utp.uni.app.struct.SinglyLinkedList;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
@@ -18,14 +19,22 @@ public class CriterioEvaluacionRepositoryImpl implements CriterioEvaluacionRepos
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 
 
+    private static final Comparator<CriterioEvaluacion> POR_ORDEN_ASC =
+            (a, b) -> Integer.compare(a.orden == null ? Integer.MAX_VALUE : a.orden,
+                    b.orden == null ? Integer.MAX_VALUE : b.orden);
+
     @Override
     public CriterioEvaluacion save(CriterioEvaluacion ce) {
         lock.writeLock().lock();
         try {
             if (ce.id == null) ce.id = seq.incrementAndGet();
-            criteriosPorCurso.computeIfAbsent(ce.curso_id, k -> new SinglyLinkedList<>()).addLast(ce);
+            criteriosPorCurso
+                    .computeIfAbsent(ce.curso_id, k -> new SinglyLinkedList<>())
+                    .addSorted(ce, POR_ORDEN_ASC);
             return ce;
-        } finally { lock.writeLock().unlock(); }
+        } finally {
+            lock.writeLock().unlock();
+        }
     }
 
     @Override
@@ -37,6 +46,8 @@ public class CriterioEvaluacionRepositoryImpl implements CriterioEvaluacionRepos
             if (list == null) return out;
             for (var n = list.head(); n != null; n = n.next) out.add(n.value);
             return out;
-        } finally { lock.readLock().unlock(); }
+        } finally {
+            lock.readLock().unlock();
+        }
     }
 }

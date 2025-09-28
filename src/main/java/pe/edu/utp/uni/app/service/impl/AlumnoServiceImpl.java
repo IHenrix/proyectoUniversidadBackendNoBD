@@ -2,16 +2,17 @@ package pe.edu.utp.uni.app.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import pe.edu.utp.uni.app.model.CriterioEvaluacion;
 import pe.edu.utp.uni.app.model.Curso;
+import pe.edu.utp.uni.app.model.Nota;
 import pe.edu.utp.uni.app.model.Usuario;
 import pe.edu.utp.uni.app.model.relationship.AlumnoCurso;
 import pe.edu.utp.uni.app.model.relationship.DocenteCurso;
+import pe.edu.utp.uni.app.repository.*;
 import pe.edu.utp.uni.app.response.CursoAlumnoResponse;
+import pe.edu.utp.uni.app.response.NotasAlumnosResponse;
 import pe.edu.utp.uni.app.service.AlumnoService;
-import pe.edu.utp.uni.app.repository.AlumnoCursoRepository;
-import pe.edu.utp.uni.app.repository.CursoRepository;
-import pe.edu.utp.uni.app.repository.DocenteCursoRepository;
-import pe.edu.utp.uni.app.repository.UsuarioRepository;
+
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
@@ -24,6 +25,8 @@ public class AlumnoServiceImpl implements AlumnoService {
     private final CursoRepository cursoRepository;
     private final DocenteCursoRepository docenteCursoRepository;
     private final UsuarioRepository usuarioRepository;
+    private final CriterioEvaluacionRepository criterioEvaluacionRepository;
+    private final NotaRepository notaRepository;
     @Override
     public List<CursoAlumnoResponse> listarCursosPorUsuario(Long usuarioId) {
         List<AlumnoCurso> acs = alumnoCursoRepository.listByUsuarioId(usuarioId);
@@ -55,6 +58,28 @@ public class AlumnoServiceImpl implements AlumnoService {
                 .sorted(Comparator.comparing(r -> r.curso == null ? "" : r.curso))
                 .collect(Collectors.toList());
     }
+
+    @Override
+    public List<NotasAlumnosResponse> listarNotasAlumnos(Long cursoId, Long alumnoCursoId) {
+        List<CriterioEvaluacion> criterios = criterioEvaluacionRepository.listByCursoId(cursoId);
+        return criterios.stream().map(ce -> {
+            Nota n = notaRepository.findByAlumnoCursoAndCriterio(alumnoCursoId, ce.id);
+            String notaAlumnoStr = (n == null || n.nota_alumno == null)
+                    ? null
+                    : String.format("%02d", n.nota_alumno.intValue());
+            Integer porcInt = ce.porcentaje == null ? null : ce.porcentaje.intValue();
+            return new NotasAlumnosResponse(
+                    ce.id,
+                    ce.nombre_criterio,
+                    ce.orden,
+                    porcInt,
+                    n == null ? null : n.nota,
+                    notaAlumnoStr,
+                    n == null ? null : n.id
+            );
+        }).collect(Collectors.toList());
+    }
+
     private String firstDocenteNombreOrdenado(Long cursoId) {
         List<DocenteCurso> dcs = docenteCursoRepository.listByCursoId(cursoId);
         return dcs.stream()
