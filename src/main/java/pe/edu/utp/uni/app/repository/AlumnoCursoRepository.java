@@ -7,4 +7,5 @@ import java.util.List;
 public interface AlumnoCursoRepository {
     AlumnoCurso save(AlumnoCurso ac);
     List<AlumnoCurso> listByUsuarioId(Long usuarioId);
+    List<AlumnoCurso> listByCursoId(Long cursoId);
 }
