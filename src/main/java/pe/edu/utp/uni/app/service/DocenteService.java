@@ -9,4 +9,5 @@ public interface DocenteService {
     List<CursoDocenteResponse> listarCursosDeDocente(Long docenteId);
     List<AlumnoListaCursoResponse> listarAlumnosPorCurso(Long cursoId);
     void registrarOEditarNotas(Long alumnoCursoId, Long cursoId, List<NotaItem> notas);
+    int eliminarNota(Long notaId, Long alumnoCursoId);
 }

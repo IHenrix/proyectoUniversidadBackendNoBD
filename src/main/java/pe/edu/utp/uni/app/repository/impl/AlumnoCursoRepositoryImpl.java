@@ -29,7 +29,6 @@ public class AlumnoCursoRepositoryImpl implements AlumnoCursoRepository {
             boolean isNew = (ac.id == null) || !store.containsKey(ac.id);
             if (ac.id == null) ac.id = seq.incrementAndGet();
             store.put(ac.id, ac);
-
             if (isNew) {
                 byUsuario.computeIfAbsent(ac.usuario_id, k -> new DoublyLinkedList<>()).addLast(ac);
                 byCurso.computeIfAbsent(ac.curso_id, k -> new SinglyLinkedList<>()).addLast(ac);

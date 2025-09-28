@@ -20,6 +20,8 @@ public class DataLoader {
                                AlumnoCursoRepository alumnoCursoRepo,
                                CriterioEvaluacionRepository criterioRepo) {
         return args -> {
+            if (!cursoRepo.findAll().isEmpty()) return;
+
             rolRepo.save(new Rol(null, "ALUMNO"));
             rolRepo.save(new Rol(null, "PROFESOR"));
             userRepo.guardarUsuario(new Usuario(null, "RPRADA", "pedrito", "RICARDO ENRIQUE", "PRADA", "GUERRA", "M", "rprada@hotmail.com","", 2L, true));

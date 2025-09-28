@@ -33,4 +33,11 @@ public class DocenteController {
         docenteService.registrarOEditarNotas(req.alumnoCursoId, req.cursoId, req.notas);
         return ResponseEntity.ok(java.util.Map.of("message","Notas registradas o editadas con éxito"));
     }
+    @DeleteMapping("/nota/{notaId}/alumno/{alumnoCursoId}")
+    public ResponseEntity<?> eliminarNota(@PathVariable Long notaId,
+                                          @PathVariable Long alumnoCursoId) {
+        int filas = docenteService.eliminarNota(notaId, alumnoCursoId);
+        if (filas > 0) return ResponseEntity.ok(java.util.Map.of("message","Nota eliminada con éxito"));
+        return ResponseEntity.status(404).body(java.util.Map.of("message","Nota no encontrada"));
+    }
 }

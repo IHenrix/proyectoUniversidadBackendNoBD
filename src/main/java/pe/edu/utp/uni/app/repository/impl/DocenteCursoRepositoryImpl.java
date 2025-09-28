@@ -26,17 +26,11 @@ public class DocenteCursoRepositoryImpl implements DocenteCursoRepository {
         lock.writeLock().lock();
         try {
             boolean isNew = (dc.id == null) || !store.containsKey(dc.id);
-
             if (dc.id == null) dc.id = seq.incrementAndGet();
             store.put(dc.id, dc);
-
             if (isNew) {
-                docentesPorCurso
-                        .computeIfAbsent(dc.curso_id, k -> new SinglyLinkedList<>())
-                        .addLast(dc);
-                cursosPorDocente
-                        .computeIfAbsent(dc.usuario_id, k -> new CircularSinglyLinkedList<>())
-                        .addLast(dc);
+                docentesPorCurso.computeIfAbsent(dc.curso_id, k -> new SinglyLinkedList<>()).addLast(dc);
+                cursosPorDocente.computeIfAbsent(dc.usuario_id, k -> new CircularSinglyLinkedList<>()).addLast(dc);
             }
             return dc;
         } finally { lock.writeLock().unlock(); }

@@ -178,6 +178,26 @@ public class DocenteServiceImpl implements DocenteService {
         }
     }
 
+    @Override
+    public int eliminarNota(Long notaId, Long alumnoCursoId) {
+        Nota n = notaRepository.findById(notaId);
+        if (n == null) return 0;
+        if (!n.alumno_curso_id.equals(alumnoCursoId)) return 0;
+
+        notaRepository.deleteById(notaId);
+
+        AlumnoCurso ac = alumnoCursoRepository.findById(alumnoCursoId);
+        if (ac != null && (ac.estado == null || !"E".equals(ac.estado))) {
+            ac.nota_final = null;
+            ac.nota_alumno_final = null;
+            ac.nota_alumno_real = null;
+            ac.estado = "E";
+            alumnoCursoRepository.save(ac);
+        }
+        return 1;
+    }
+
+
 
     private static Double toValidNumber(Object v) {
         if (v == null) return null;

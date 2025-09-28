@@ -57,4 +57,26 @@ public class NotaRepositoryImpl implements NotaRepository {
         }
     }
 
+    @Override
+    public Nota findById(Long id) {
+        lock.readLock().lock();
+        try { return store.get(id); }
+        finally { lock.readLock().unlock(); }
+    }
+
+    @Override
+    public void deleteById(Long id) {
+        lock.writeLock().lock();
+        try {
+            Nota n = store.remove(id);
+            if (n != null) {
+                Map<Long, Nota> m = byAlumnoCursoThenCriterio.get(n.alumno_curso_id);
+                if (m != null) {
+                    m.remove(n.criterio_id);
+                    if (m.isEmpty()) byAlumnoCursoThenCriterio.remove(n.alumno_curso_id);
+                }
+            }
+        } finally { lock.writeLock().unlock(); }
+    }
+
 }
