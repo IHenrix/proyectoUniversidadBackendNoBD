@@ -1,0 +1,233 @@
+type: collection.insomnia.rest/5.0
+name: PROYECTO ALGORTIMOS
+meta:
+  id: wrk_74088040e6854ea9b7bf932b14bd96be
+  created: 1758834348368
+  modified: 1758834848807
+  description: ""
+collection:
+  - url: http://localhost:5000/usuario/login
+    name: LOGIN
+    meta:
+      id: req_a490f13b554b40d49340754edff6863b
+      created: 1758834348478
+      modified: 1759089987855
+      isPrivate: false
+      description: ""
+      sortKey: -1758834348478
+    method: POST
+    body:
+      mimeType: application/json
+      text: |-
+        {
+        	"usuario": "JMORALES",
+          "pass": "Marco1415"
+        }
+    headers:
+      - name: Content-Type
+        value: application/json
+      - name: User-Agent
+        value: insomnia/11.6.1
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: http://localhost:5000/alumno/cursos?usuarioId=2
+    name: LISTAR CURSO POR ALUMNO
+    meta:
+      id: req_405b9ac7cbba4c6aaffbc2ea053e9981
+      created: 1759033535825
+      modified: 1759083290667
+      isPrivate: false
+      description: ""
+      sortKey: -1759033535825
+    method: GET
+    headers:
+      - name: User-Agent
+        value: insomnia/11.6.1
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: http://localhost:5000/alumno/notas?cursoId=2&alumnoCursoId=11
+    name: LISTAR NOTAS POR ALUMNO
+    meta:
+      id: req_86fc65ae153a49e88ac90ed407a7ec47
+      created: 1759037065891
+      modified: 1759089991361
+      isPrivate: false
+      description: ""
+      sortKey: -1759037065891
+    method: GET
+    headers:
+      - name: User-Agent
+        value: insomnia/11.6.1
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: http://localhost:5000/docente/cursos?docenteId=1
+    name: LISTAR CURSOS POR DOCENTE
+    meta:
+      id: req_851ed044b2d84a14b8c45e2ec4ad7a5d
+      created: 1759042675400
+      modified: 1759089993353
+      isPrivate: false
+      description: ""
+      sortKey: -1759042675400
+    method: GET
+    headers:
+      - name: User-Agent
+        value: insomnia/11.6.1
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: http://localhost:5000/docente/cursos/alumnos?cursoId=3
+    name: LISTAR ALUMNOS POR CURSO (DOCENTE)
+    meta:
+      id: req_b9721d528e894f17b432fd4e43b08b23
+      created: 1759081195027
+      modified: 1759089996173
+      isPrivate: false
+      description: ""
+      sortKey: -1759081195027
+    method: GET
+    headers:
+      - name: User-Agent
+        value: insomnia/11.6.1
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: http://localhost:5000/docente/registrar-editar-notas
+    name: REGISTRAR / MODIFICAR NOTA
+    meta:
+      id: req_abbc258f9aec499199632f0227f2d126
+      created: 1759082828280
+      modified: 1759089997379
+      isPrivate: false
+      description: ""
+      sortKey: -1759082828280
+    method: POST
+    body:
+      mimeType: application/json
+      text: |-
+        {
+            "alumnoCursoId": 3,
+            "cursoId": 3,
+            "notas": [
+                {
+                    "id": 5,
+                    "criterio": "Avance de proyecto final 1 (APF1)",
+                    "orden": 1,
+                    "porcentaje": 20,
+                    "nota": "10.00",
+                    "notaAlumno": "10",
+                    "notaId": null
+                },
+                {
+                    "id": 6,
+                    "criterio": "Avance de proyecto final 2 (APF2)",
+                    "orden": 2,
+                    "porcentaje": 20,
+                    "nota": null,
+                    "notaAlumno": null,
+                    "notaId": null
+                },
+                {
+                    "id": 7,
+                    "criterio": "Avance de proyecto final 3 (APF3)",
+                    "orden": 3,
+                    "porcentaje": 20,
+                    "nota": null,
+                    "notaAlumno": null,
+                    "notaId": null
+                },
+                {
+                    "id": 8,
+                    "criterio": "Participación en clase (PA)",
+                    "orden": 4,
+                    "porcentaje": 10,
+                    "nota": null,
+                    "notaAlumno": null,
+                    "notaId": null
+                },
+                {
+                    "id": 9,
+                    "criterio": "Proyecto final (PROY)",
+                    "orden": 5,
+                    "porcentaje": 30,
+                    "nota": null,
+                    "notaAlumno": null,
+                    "notaId": null
+                }
+            ]
+        }
+    headers:
+      - name: Content-Type
+        value: application/json
+      - name: User-Agent
+        value: insomnia/11.6.1
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+  - url: http://localhost:5000/docente/nota/42/alumno/11
+    name: ELIMINAR NOTA
+    meta:
+      id: req_d1d422be73064623ab9b7138968adb34
+      created: 1759088698147
+      modified: 1759089977597
+      isPrivate: false
+      description: ""
+      sortKey: -1759088698147
+    method: DELETE
+    headers:
+      - name: User-Agent
+        value: insomnia/11.6.1
+    settings:
+      renderRequestBody: true
+      encodeUrl: true
+      followRedirects: global
+      cookies:
+        send: true
+        store: true
+      rebuildPath: true
+cookieJar:
+  name: Default Jar
+  meta:
+    id: jar_5c570b35240d66ed4c8424e9d5a9d4c5b840f70a
+    created: 1758834348375
+    modified: 1758834348375
+environments:
+  name: Base Environment
+  meta:
+    id: env_5c570b35240d66ed4c8424e9d5a9d4c5b840f70a
+    created: 1758834348372
+    modified: 1758834348372
+    isPrivate: false
