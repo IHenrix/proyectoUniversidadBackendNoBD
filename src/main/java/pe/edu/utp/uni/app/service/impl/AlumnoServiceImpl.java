@@ -115,4 +115,70 @@ public class AlumnoServiceImpl implements AlumnoService {
                 .sorted()
                 .findFirst().orElse(null);
     }
+
+    @Override
+    public CursoAlumnoResponse matricularEnSeccion(Long usuarioId, Long seccionId) {
+        Usuario alumno = usuarioRepository.findById(usuarioId);
+        Seccion seccion = seccionRepository.findById(seccionId);
+        if (alumno == null || seccion == null) return null;
+        // evitar duplicado
+        boolean yaInscrito = alumnoCursoRepository.listByUsuarioId(usuarioId).stream()
+                .anyMatch(ac -> ac.seccion_id != null && ac.seccion_id.equals(seccionId));
+        if (yaInscrito) return null;
+
+        AlumnoCurso nuevo = new AlumnoCurso(null, usuarioId, seccion.curso_id, seccionId, "E", null, null, null, true);
+        alumnoCursoRepository.save(nuevo);
+
+        String alumnoNombre = (alumno.nombre + " " + alumno.paterno + " " + alumno.materno).trim();
+        String docenteNombre = firstDocenteNombreOrdenadoPorSeccion(seccion.id);
+        Curso c = cursoRepository.findById(seccion.curso_id);
+        return new CursoAlumnoResponse(
+                c == null ? null : c.id,
+                seccion.id,
+                seccion.codigo,
+                c == null ? null : c.nombre,
+                c == null ? null : c.horas_semanales,
+                c == null ? null : c.creditos,
+                seccion.modalidad,
+                seccion.horarios,
+                alumnoNombre,
+                docenteNombre,
+                nuevo.id,
+                nuevo.usuario_id,
+                null,
+                null,
+                "E"
+        );
+    }
+
+    @Override
+    public List<CursoAlumnoResponse> listarSeccionesDisponibles(Long usuarioId) {
+        List<Long> inscritos = alumnoCursoRepository.listByUsuarioId(usuarioId).stream()
+                .map(ac -> ac.seccion_id).filter(Objects::nonNull).collect(Collectors.toList());
+        return seccionRepository.findAll().stream()
+                .filter(s -> s.id != null && !inscritos.contains(s.id))
+                .map(seccion -> {
+                    Curso c = cursoRepository.findById(seccion.curso_id);
+                    String docenteNombre = firstDocenteNombreOrdenadoPorSeccion(seccion.id);
+                    return new CursoAlumnoResponse(
+                            c == null ? null : c.id,
+                            seccion.id,
+                            seccion.codigo,
+                            c == null ? null : c.nombre,
+                            c == null ? null : c.horas_semanales,
+                            c == null ? null : c.creditos,
+                            seccion.modalidad,
+                            seccion.horarios,
+                            null,
+                            docenteNombre,
+                            null,
+                            usuarioId,
+                            null,
+                            null,
+                            seccion.estado
+                    );
+                })
+                .sorted(Comparator.comparing(r -> r.curso == null ? "" : r.curso))
+                .collect(Collectors.toList());
+    }
 }

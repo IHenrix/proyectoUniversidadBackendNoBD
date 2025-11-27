@@ -24,4 +24,27 @@ public class SinglyLinkedList<T> {
 
     public Node<T> head(){ return head; }
     public int size(){ return size; }
+
+    public void setHead(Node<T> newHead) { this.head = newHead; }
+
+    public boolean remove(T value) {
+        if (head == null) return false;
+        if (head.value == value || (head.value != null && head.value.equals(value))) {
+            head = head.next;
+            size = Math.max(0, size - 1);
+            return true;
+        }
+        Node<T> prev = head;
+        Node<T> cur = head.next;
+        while (cur != null) {
+            if (cur.value == value || (cur.value != null && cur.value.equals(value))) {
+                prev.next = cur.next;
+                size = Math.max(0, size - 1);
+                return true;
+            }
+            prev = cur;
+            cur = cur.next;
+        }
+        return false;
+    }
 }

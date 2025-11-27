@@ -34,4 +34,10 @@ public class CursoRepositoryImpl implements CursoRepository {
         lock.readLock().lock();
         try { return new ArrayList<>(store.values()); } finally { lock.readLock().unlock(); }
     }
+
+    @Override
+    public void deleteById(Long id) {
+        lock.writeLock().lock();
+        try { store.remove(id); } finally { lock.writeLock().unlock(); }
+    }
 }

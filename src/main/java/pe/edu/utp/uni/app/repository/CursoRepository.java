@@ -8,4 +8,5 @@ public interface CursoRepository {
     Curso save(Curso c);
     Curso findById(Long id);
     List<Curso> findAll();
+    void deleteById(Long id);
 }

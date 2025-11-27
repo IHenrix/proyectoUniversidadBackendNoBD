@@ -86,4 +86,24 @@ public class SeccionRepositoryImpl implements SeccionRepository {
             lock.readLock().unlock();
         }
     }
+
+    @Override
+    public void deleteById(Long id) {
+        lock.writeLock().lock();
+        try {
+            Seccion s = store.remove(id);
+            if (s != null) {
+                if (s.curso_id != null) {
+                    var listCurso = byCurso.get(s.curso_id);
+                    if (listCurso != null) listCurso.remove(s);
+                }
+                if (s.docente_id != null) {
+                    var listDocente = byDocente.get(s.docente_id);
+                    if (listDocente != null) listDocente.remove(s);
+                }
+            }
+        } finally {
+            lock.writeLock().unlock();
+        }
+    }
 }

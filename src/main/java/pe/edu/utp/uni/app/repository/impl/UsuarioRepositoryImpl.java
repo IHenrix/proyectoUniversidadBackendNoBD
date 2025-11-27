@@ -43,4 +43,22 @@ public class UsuarioRepositoryImpl implements UsuarioRepository {
         lock.readLock().lock();
         try { return store.get(id); } finally { lock.readLock().unlock(); }
     }
+
+    @Override
+    public java.util.List<Usuario> findAll() {
+        lock.readLock().lock();
+        try { return new java.util.ArrayList<>(store.values()); }
+        finally { lock.readLock().unlock(); }
+    }
+
+    @Override
+    public void deleteById(Long id) {
+        lock.writeLock().lock();
+        try {
+            Usuario removed = store.remove(id);
+            if (removed != null && removed.username != null) {
+                indexByUsername.remove(removed.username);
+            }
+        } finally { lock.writeLock().unlock(); }
+    }
 }

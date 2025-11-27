@@ -14,6 +14,7 @@ public class AVLTree<K extends Comparable<K>, V> {
         Node n = search(root, key);
         return n == null ? null : n.value;
     }
+    public void remove(K key) { root = deleteNode(root, key); }
     private Node search(Node node, K key) {
         if (node == null) return null;
         int cmp = key.compareTo(node.key);
@@ -50,5 +51,41 @@ public class AVLTree<K extends Comparable<K>, V> {
         if (bf > 1 && key.compareTo(node.left.key) > 0) { node.left = leftRotate(node.left); return rightRotate(node); }
         if (bf < -1 && key.compareTo(node.right.key) < 0) { node.right = rightRotate(node.right); return leftRotate(node); }
         return node;
+    }
+
+    private Node minValueNode(Node n) {
+        Node current = n;
+        while (current.left != null) current = current.left;
+        return current;
+    }
+
+    private Node deleteNode(Node root, K key) {
+        if (root == null) return root;
+        int cmp = key.compareTo(root.key);
+        if (cmp < 0) root.left = deleteNode(root.left, key);
+        else if (cmp > 0) root.right = deleteNode(root.right, key);
+        else {
+            if ((root.left == null) || (root.right == null)) {
+                Node temp = root.left != null ? root.left : root.right;
+                if (temp == null) {
+                    root = null;
+                } else {
+                    root = temp;
+                }
+            } else {
+                Node temp = minValueNode(root.right);
+                root.key = temp.key;
+                root.value = temp.value;
+                root.right = deleteNode(root.right, temp.key);
+            }
+        }
+        if (root == null) return root;
+        root.height = 1 + Math.max(height(root.left), height(root.right));
+        int bf = balance(root);
+        if (bf > 1 && balance(root.left) >= 0) return rightRotate(root);
+        if (bf > 1 && balance(root.left) < 0) { root.left = leftRotate(root.left); return rightRotate(root); }
+        if (bf < -1 && balance(root.right) <= 0) return leftRotate(root);
+        if (bf < -1 && balance(root.right) > 0) { root.right = rightRotate(root.right); return leftRotate(root); }
+        return root;
     }
 }

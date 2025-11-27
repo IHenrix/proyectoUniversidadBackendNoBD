@@ -9,4 +9,5 @@ public interface SeccionRepository {
     List<Seccion> findAll();
     List<Seccion> listByCursoId(Long cursoId);
     List<Seccion> listByDocenteId(Long docenteId);
+    void deleteById(Long id);
 }

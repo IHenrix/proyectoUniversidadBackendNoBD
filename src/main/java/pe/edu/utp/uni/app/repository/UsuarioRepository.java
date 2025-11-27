@@ -6,4 +6,6 @@ public interface UsuarioRepository {
     Usuario buscarPorUsuario(String username);
     Usuario guardarUsuario(Usuario u);
     Usuario findById(Long id);
+    java.util.List<Usuario> findAll();
+    void deleteById(Long id);
 }

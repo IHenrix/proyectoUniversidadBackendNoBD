@@ -24,10 +24,12 @@ public class DataLoader {
 
             rolRepo.save(new Rol(null, "ALUMNO"));
             rolRepo.save(new Rol(null, "PROFESOR"));
+            rolRepo.save(new Rol(null, "ADMIN"));
 
             userRepo.guardarUsuario(new Usuario(null, "RPRADA", "Marco1415", "RICARDO ENRIQUE", "PRADA", "GUERRA", "M", "rprada@hotmail.com","", 2L, true));
             userRepo.guardarUsuario(new Usuario(null, "JMORALES", "Marco1415", "JUAN JOSE", "MORALES", "VELASQUEZ", "M", "jmorales@hotmail.com","U23316357", 1L, true));
             userRepo.guardarUsuario(new Usuario(null, "NLOPEZO", "Marco1415", "NIKOL", "LOPEZ", "OCHOA", "F", "nlopezo@hotmail.com","U23316358", 1L, true));
+            userRepo.guardarUsuario(new Usuario(null, "PYARLEQUE", "Marco1415", "PEDRO LUIS SANTOS", "YARLEQUE", "LINARES", "M", "pyarleque@hotmail.com","", 3L, true));
 
             // Cursos
             Curso c1 = cursoRepo.save(new Curso(null, "Redes y comunicación de datos I (1I41N)", 4.0, 4.0, "P"));
