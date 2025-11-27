@@ -6,8 +6,8 @@ import pe.edu.utp.uni.app.request.NotaItem;
 import java.util.List;
 
 public interface DocenteService {
-    List<CursoDocenteResponse> listarCursosDeDocente(Long docenteId);
-    List<AlumnoListaCursoResponse> listarAlumnosPorCurso(Long cursoId);
-    void registrarOEditarNotas(Long alumnoCursoId, Long cursoId, List<NotaItem> notas);
-    int eliminarNota(Long notaId, Long alumnoCursoId);
+    List<CursoDocenteResponse> listarSeccionesDeDocente(Long docenteId);
+    List<AlumnoListaCursoResponse> listarAlumnosPorSeccion(Long seccionId);
+    void registrarOEditarNotas(Long alumnoCursoId, Long seccionId, List<NotaItem> notas);
+    int eliminarNota(Long notaId, Long alumnoCursoId, Long seccionId);
 }

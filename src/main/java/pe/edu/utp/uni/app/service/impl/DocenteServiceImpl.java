@@ -2,8 +2,10 @@ package pe.edu.utp.uni.app.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
+import org.springframework.util.CollectionUtils;
 import pe.edu.utp.uni.app.model.Curso;
 import pe.edu.utp.uni.app.model.Nota;
+import pe.edu.utp.uni.app.model.Seccion;
 import pe.edu.utp.uni.app.model.Usuario;
 import pe.edu.utp.uni.app.model.relationship.AlumnoCurso;
 import pe.edu.utp.uni.app.model.relationship.DocenteCurso;
@@ -21,30 +23,44 @@ import java.util.*;
 public class DocenteServiceImpl implements DocenteService {
     private final DocenteCursoRepository docenteCursoRepository;
     private final CursoRepository cursoRepository;
+    private final SeccionRepository seccionRepository;
     private final AlumnoCursoRepository alumnoCursoRepository;
     private final UsuarioRepository usuarioRepository;
     private final NotaRepository notaRepository;
     @Override
-    public List<CursoDocenteResponse> listarCursosDeDocente(Long docenteId) {
+    public List<CursoDocenteResponse> listarSeccionesDeDocente(Long docenteId) {
         List<DocenteCurso> asignaciones = docenteCursoRepository.listByDocenteId(docenteId);
         List<CursoDocenteResponse> out = new ArrayList<>();
         for (DocenteCurso dc : asignaciones) {
             if (dc.activo == null || !dc.activo) continue;
-            Curso c = cursoRepository.findById(dc.curso_id);
+            Seccion seccion = dc.seccion_id == null ? null : seccionRepository.findById(dc.seccion_id);
+            Curso c = cursoRepository.findById(dc.curso_id != null ? dc.curso_id : (seccion == null ? null : seccion.curso_id));
             if (c == null) continue;
             int alumnos = 0;
-            for (AlumnoCurso ac : alumnoCursoRepository.listByCursoId(c.id)) {
+            List<AlumnoCurso> inscripciones = dc.seccion_id != null
+                    ? alumnoCursoRepository.listBySeccionId(dc.seccion_id)
+                    : alumnoCursoRepository.listByCursoId(c.id);
+            for (AlumnoCurso ac : inscripciones) {
                 if (Boolean.TRUE.equals(ac.activo)) alumnos++;
             }
-            out.add(new CursoDocenteResponse(c.id, c.nombre, c.horas_semanales, c.creditos, c.modalidad, alumnos));
+            out.add(new CursoDocenteResponse(
+                    seccion == null ? c.id : seccion.id,
+                    seccion == null ? null : seccion.codigo,
+                    c.id,
+                    c.nombre,
+                    c.horas_semanales,
+                    c.creditos,
+                    seccion != null && seccion.modalidad != null ? seccion.modalidad : c.modalidad,
+                    seccion == null ? java.util.List.of() : seccion.horarios,
+                    alumnos));
         }
         out.sort(Comparator.comparing(a -> a.curso == null ? "" : a.curso));
         return out;
     }
 
     @Override
-    public List<AlumnoListaCursoResponse> listarAlumnosPorCurso(Long cursoId) {
-        List<AlumnoCurso> inscripciones = alumnoCursoRepository.listByCursoId(cursoId);
+    public List<AlumnoListaCursoResponse> listarAlumnosPorSeccion(Long seccionId) {
+        List<AlumnoCurso> inscripciones = alumnoCursoRepository.listBySeccionId(seccionId);
 
         MinHeap<AlumnoListaCursoResponse> heap = new MinHeap<>(Comparator.comparing(
                         (AlumnoListaCursoResponse x) -> x.paterno == null ? "" : x.paterno)
@@ -77,7 +93,11 @@ public class DocenteServiceImpl implements DocenteService {
     }
 
     @Override
-    public void registrarOEditarNotas(Long alumnoCursoId, Long cursoId, List<NotaItem> notas) {
+    public void registrarOEditarNotas(Long alumnoCursoId, Long seccionId, List<NotaItem> notas) {
+        AlumnoCurso ac = alumnoCursoRepository.findById(alumnoCursoId);
+        if (ac == null || (ac.seccion_id != null && !ac.seccion_id.equals(seccionId))) {
+            throw new IllegalArgumentException("El alumno no pertenece a la sección");
+        }
         SimpleStack<Runnable> undo = new SimpleStack<>();
         List<Nota> afectadas = new ArrayList<>();
 
@@ -88,6 +108,10 @@ public class DocenteServiceImpl implements DocenteService {
                 Double notaAlumno = toValidNumber(it.notaAlumno);
 
                 Nota existente = notaRepository.findByAlumnoCursoAndCriterio(alumnoCursoId, criterioId);
+
+                if ((notaValor != null && (notaValor < 0.0 || notaValor > 20.0)) || (notaAlumno != null && (notaAlumno < 0.0 || notaAlumno > 20.0))) {
+                    throw new IllegalArgumentException("Nota fuera de rango");
+                }
 
                 if (existente != null) {
                     if (notaValor == null || notaAlumno == null) {
@@ -120,10 +144,12 @@ public class DocenteServiceImpl implements DocenteService {
                 }
             }
 
-            AlumnoCurso ac = alumnoCursoRepository.findById(alumnoCursoId);
-            if (ac == null) throw new IllegalStateException("AlumnoCurso no existe");
+            AlumnoCurso acRef = alumnoCursoRepository.findById(alumnoCursoId);
+            if (acRef == null) throw new IllegalStateException("AlumnoCurso no existe");
 
-            if (todasValidas) {
+            boolean porcentajesValidos = sumaPorcentajesCorrecta(notas);
+
+            if (todasValidas && porcentajesValidos) {
                 double promedioNota = 0.0;
                 double promedioNotaAlumno = 0.0;
                 for (NotaItem it : notas) {
@@ -134,42 +160,42 @@ public class DocenteServiceImpl implements DocenteService {
                 String transform = notaFavorAlumno(promedioNotaAlumno);
                 String estado = promedioNotaAlumno >= 11.6 ? "A" : "D";
 
-                Double prevNotaFinal = ac.nota_final;
-                Double prevNotaAlumnoFinal = ac.nota_alumno_final;
-                Double prevNotaAlumnoReal = ac.nota_alumno_real;
-                String prevEstado = ac.estado;
+                Double prevNotaFinal = acRef.nota_final;
+                Double prevNotaAlumnoFinal = acRef.nota_alumno_final;
+                Double prevNotaAlumnoReal = acRef.nota_alumno_real;
+                String prevEstado = acRef.estado;
 
-                ac.nota_final = promedioNota;
-                ac.nota_alumno_final = toDouble(transform);
-                ac.nota_alumno_real = promedioNotaAlumno;
-                ac.estado = estado;
+                acRef.nota_final = promedioNota;
+                acRef.nota_alumno_final = toDouble(transform);
+                acRef.nota_alumno_real = promedioNotaAlumno;
+                acRef.estado = estado;
 
-                alumnoCursoRepository.save(ac);
+                alumnoCursoRepository.save(acRef);
                 undo.push(() -> {
-                    ac.nota_final = prevNotaFinal;
-                    ac.nota_alumno_final = prevNotaAlumnoFinal;
-                    ac.nota_alumno_real = prevNotaAlumnoReal;
-                    ac.estado = prevEstado;
-                    alumnoCursoRepository.save(ac);
+                    acRef.nota_final = prevNotaFinal;
+                    acRef.nota_alumno_final = prevNotaAlumnoFinal;
+                    acRef.nota_alumno_real = prevNotaAlumnoReal;
+                    acRef.estado = prevEstado;
+                    alumnoCursoRepository.save(acRef);
                 });
             } else {
-                Double prevNotaFinal = ac.nota_final;
-                Double prevNotaAlumnoFinal = ac.nota_alumno_final;
-                Double prevNotaAlumnoReal = ac.nota_alumno_real;
-                String prevEstado = ac.estado;
+                Double prevNotaFinal = acRef.nota_final;
+                Double prevNotaAlumnoFinal = acRef.nota_alumno_final;
+                Double prevNotaAlumnoReal = acRef.nota_alumno_real;
+                String prevEstado = acRef.estado;
 
-                ac.nota_final = null;
-                ac.nota_alumno_final = null;
-                ac.nota_alumno_real = null;
-                ac.estado = "E";
-                alumnoCursoRepository.save(ac);
+                acRef.nota_final = null;
+                acRef.nota_alumno_final = null;
+                acRef.nota_alumno_real = null;
+                acRef.estado = "E";
+                alumnoCursoRepository.save(acRef);
 
                 undo.push(() -> {
-                    ac.nota_final = prevNotaFinal;
-                    ac.nota_alumno_final = prevNotaAlumnoFinal;
-                    ac.nota_alumno_real = prevNotaAlumnoReal;
-                    ac.estado = prevEstado;
-                    alumnoCursoRepository.save(ac);
+                    acRef.nota_final = prevNotaFinal;
+                    acRef.nota_alumno_final = prevNotaAlumnoFinal;
+                    acRef.nota_alumno_real = prevNotaAlumnoReal;
+                    acRef.estado = prevEstado;
+                    alumnoCursoRepository.save(acRef);
                 });
             }
         } catch (Exception ex) {
@@ -179,7 +205,7 @@ public class DocenteServiceImpl implements DocenteService {
     }
 
     @Override
-    public int eliminarNota(Long notaId, Long alumnoCursoId) {
+    public int eliminarNota(Long notaId, Long alumnoCursoId, Long seccionId) {
         Nota n = notaRepository.findById(notaId);
         if (n == null) return 0;
         if (!n.alumno_curso_id.equals(alumnoCursoId)) return 0;
@@ -187,6 +213,7 @@ public class DocenteServiceImpl implements DocenteService {
         notaRepository.deleteById(notaId);
 
         AlumnoCurso ac = alumnoCursoRepository.findById(alumnoCursoId);
+        if (ac != null && seccionId != null && ac.seccion_id != null && !ac.seccion_id.equals(seccionId)) return 0;
         if (ac != null && (ac.estado == null || !"E".equals(ac.estado))) {
             ac.nota_final = null;
             ac.nota_alumno_final = null;
@@ -225,6 +252,15 @@ public class DocenteServiceImpl implements DocenteService {
         double decimal = Math.round((value % 1) * 100.0) / 100.0;
         int rounded = (int) value + (decimal >= 0.6 ? 1 : 0);
         return (rounded < 10 ? "0" + rounded : String.valueOf(rounded));
+    }
+
+    private static boolean sumaPorcentajesCorrecta(List<NotaItem> notas) {
+        if (CollectionUtils.isEmpty(notas)) return false;
+        double suma = 0.0;
+        for (NotaItem it : notas) {
+            suma += it.porcentaje == null ? 0.0 : it.porcentaje;
+        }
+        return Math.abs(suma - 100.0) < 0.01;
     }
 
 }

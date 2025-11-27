@@ -19,6 +19,7 @@ public class AlumnoCursoRepositoryImpl implements AlumnoCursoRepository {
     private final Map<Long, AlumnoCurso> store = new HashMap<>();
     private final Map<Long, DoublyLinkedList<AlumnoCurso>> byUsuario = new HashMap<>();
     private final Map<Long, SinglyLinkedList<AlumnoCurso>> byCurso = new HashMap<>();
+    private final Map<Long, SinglyLinkedList<AlumnoCurso>> bySeccion = new HashMap<>();
     private final AtomicLong seq = new AtomicLong(0);
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 
@@ -32,6 +33,9 @@ public class AlumnoCursoRepositoryImpl implements AlumnoCursoRepository {
             if (isNew) {
                 byUsuario.computeIfAbsent(ac.usuario_id, k -> new DoublyLinkedList<>()).addLast(ac);
                 byCurso.computeIfAbsent(ac.curso_id, k -> new SinglyLinkedList<>()).addLast(ac);
+                if (ac.seccion_id != null) {
+                    bySeccion.computeIfAbsent(ac.seccion_id, k -> new SinglyLinkedList<>()).addLast(ac);
+                }
             }
             return ac;
         } finally { lock.writeLock().unlock(); }
@@ -54,6 +58,18 @@ public class AlumnoCursoRepositoryImpl implements AlumnoCursoRepository {
         lock.readLock().lock();
         try {
             SinglyLinkedList<AlumnoCurso> list = byCurso.get(cursoId);
+            List<AlumnoCurso> out = new ArrayList<>();
+            if (list == null) return out;
+            for (var n = list.head(); n != null; n = n.next) out.add(n.value);
+            return out;
+        } finally { lock.readLock().unlock(); }
+    }
+
+    @Override
+    public List<AlumnoCurso> listBySeccionId(Long seccionId) {
+        lock.readLock().lock();
+        try {
+            SinglyLinkedList<AlumnoCurso> list = bySeccion.get(seccionId);
             List<AlumnoCurso> out = new ArrayList<>();
             if (list == null) return out;
             for (var n = list.head(); n != null; n = n.next) out.add(n.value);

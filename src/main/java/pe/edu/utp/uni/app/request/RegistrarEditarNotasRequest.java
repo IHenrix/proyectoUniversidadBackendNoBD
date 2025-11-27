@@ -4,7 +4,7 @@ import java.util.List;
 
 public class RegistrarEditarNotasRequest {
     public Long alumnoCursoId;
-    public Long cursoId;
+    public Long seccionId;
     public List<NotaItem> notas;
 
     public RegistrarEditarNotasRequest() {}

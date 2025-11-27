@@ -18,17 +18,17 @@ import java.util.List;
 public class AlumnoController {
     private final AlumnoService alumnoService;
 
-    @GetMapping("/cursos")
-    public ResponseEntity<?> listarCursos(@RequestParam(name = "usuarioId", required = false) Long usuarioId) {
+    @GetMapping("/secciones")
+    public ResponseEntity<?> listarSecciones(@RequestParam(name = "usuarioId", required = false) Long usuarioId) {
         if (usuarioId == null) return ResponseEntity.ok(java.util.List.of());
-        List<CursoAlumnoResponse> cursos = alumnoService.listarCursosPorUsuario(usuarioId);
+        List<CursoAlumnoResponse> cursos = alumnoService.listarSeccionesPorUsuario(usuarioId);
         return ResponseEntity.ok(cursos);
     }
 
     @GetMapping("/notas")
-    public ResponseEntity<?> listarNotasAlumno(@RequestParam("cursoId") Long cursoId,
+    public ResponseEntity<?> listarNotasAlumno(@RequestParam("seccionId") Long seccionId,
                                                @RequestParam("alumnoCursoId") Long alumnoCursoId) {
-        List<NotasAlumnosResponse> notas = alumnoService.listarNotasAlumnos(cursoId, alumnoCursoId);
+        List<NotasAlumnosResponse> notas = alumnoService.listarNotasAlumnos(seccionId, alumnoCursoId);
         return ResponseEntity.ok(notas);
     }
 }

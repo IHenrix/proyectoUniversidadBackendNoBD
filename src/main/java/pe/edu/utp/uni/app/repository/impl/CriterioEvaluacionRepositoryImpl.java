@@ -15,6 +15,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 @Repository
 public class CriterioEvaluacionRepositoryImpl implements CriterioEvaluacionRepository {
     private final ConcurrentHashMap<Long, SinglyLinkedList<CriterioEvaluacion>> criteriosPorCurso = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<Long, SinglyLinkedList<CriterioEvaluacion>> criteriosPorSeccion = new ConcurrentHashMap<>();
     private final AtomicLong seq = new AtomicLong(0);
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 
@@ -31,6 +32,11 @@ public class CriterioEvaluacionRepositoryImpl implements CriterioEvaluacionRepos
             criteriosPorCurso
                     .computeIfAbsent(ce.curso_id, k -> new SinglyLinkedList<>())
                     .addSorted(ce, POR_ORDEN_ASC);
+            if (ce.seccion_id != null) {
+                criteriosPorSeccion
+                        .computeIfAbsent(ce.seccion_id, k -> new SinglyLinkedList<>())
+                        .addSorted(ce, POR_ORDEN_ASC);
+            }
             return ce;
         } finally {
             lock.writeLock().unlock();
@@ -42,6 +48,20 @@ public class CriterioEvaluacionRepositoryImpl implements CriterioEvaluacionRepos
         lock.readLock().lock();
         try {
             var list = criteriosPorCurso.get(cursoId);
+            var out = new ArrayList<CriterioEvaluacion>();
+            if (list == null) return out;
+            for (var n = list.head(); n != null; n = n.next) out.add(n.value);
+            return out;
+        } finally {
+            lock.readLock().unlock();
+        }
+    }
+
+    @Override
+    public List<CriterioEvaluacion> listBySeccionId(Long seccionId) {
+        lock.readLock().lock();
+        try {
+            var list = criteriosPorSeccion.get(seccionId);
             var out = new ArrayList<CriterioEvaluacion>();
             if (list == null) return out;
             for (var n = list.head(); n != null; n = n.next) out.add(n.value);

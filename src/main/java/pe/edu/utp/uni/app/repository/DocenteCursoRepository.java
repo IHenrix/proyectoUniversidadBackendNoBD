@@ -8,4 +8,5 @@ public interface DocenteCursoRepository {
     DocenteCurso save(DocenteCurso dc);
     List<DocenteCurso> listByCursoId(Long cursoId);
     List<DocenteCurso> listByDocenteId(Long docenteId);
+    List<DocenteCurso> listBySeccionId(Long seccionId);
 }

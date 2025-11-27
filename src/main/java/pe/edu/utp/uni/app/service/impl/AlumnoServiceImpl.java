@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import pe.edu.utp.uni.app.model.CriterioEvaluacion;
 import pe.edu.utp.uni.app.model.Curso;
+import pe.edu.utp.uni.app.model.Seccion;
 import pe.edu.utp.uni.app.model.Nota;
 import pe.edu.utp.uni.app.model.Usuario;
 import pe.edu.utp.uni.app.model.relationship.AlumnoCurso;
@@ -27,8 +28,9 @@ public class AlumnoServiceImpl implements AlumnoService {
     private final UsuarioRepository usuarioRepository;
     private final CriterioEvaluacionRepository criterioEvaluacionRepository;
     private final NotaRepository notaRepository;
+    private final SeccionRepository seccionRepository;
     @Override
-    public List<CursoAlumnoResponse> listarCursosPorUsuario(Long usuarioId) {
+    public List<CursoAlumnoResponse> listarSeccionesPorUsuario(Long usuarioId) {
         List<AlumnoCurso> acs = alumnoCursoRepository.listByUsuarioId(usuarioId);
         Usuario alumno = usuarioRepository.findById(usuarioId);
         String alumnoNombre = alumno == null ? null : (alumno.nombre + " " + alumno.paterno + " " + alumno.materno).trim();
@@ -36,16 +38,20 @@ public class AlumnoServiceImpl implements AlumnoService {
         return acs.stream()
                 .filter(ac -> Boolean.TRUE.equals(ac.activo))
                 .map(ac -> {
+                    Seccion seccion = ac.seccion_id == null ? null : seccionRepository.findById(ac.seccion_id);
                     Curso c = cursoRepository.findById(ac.curso_id);
-                    String docenteNombre = firstDocenteNombreOrdenado(ac.curso_id);
+                    String docenteNombre = seccion != null ? firstDocenteNombreOrdenadoPorSeccion(seccion.id) : firstDocenteNombreOrdenado(ac.curso_id);
                     String notaAlumnoFinalStr = ac.nota_alumno_final == null ? null
                             : String.format("%02d", ac.nota_alumno_final.intValue());
                     return new CursoAlumnoResponse(
                             c == null ? null : c.id,
+                            seccion == null ? null : seccion.id,
+                            seccion == null ? null : seccion.codigo,
                             c == null ? null : c.nombre,
                             c == null ? null : c.horas_semanales,
                             c == null ? null : c.creditos,
-                            c == null ? null : c.modalidad,
+                            seccion != null && seccion.modalidad != null ? seccion.modalidad : (c == null ? null : c.modalidad),
+                            seccion == null ? java.util.List.of() : seccion.horarios,
                             alumnoNombre,
                             docenteNombre,
                             ac.id,
@@ -60,8 +66,16 @@ public class AlumnoServiceImpl implements AlumnoService {
     }
 
     @Override
-    public List<NotasAlumnosResponse> listarNotasAlumnos(Long cursoId, Long alumnoCursoId) {
-        List<CriterioEvaluacion> criterios = criterioEvaluacionRepository.listByCursoId(cursoId);
+    public List<NotasAlumnosResponse> listarNotasAlumnos(Long seccionId, Long alumnoCursoId) {
+        List<CriterioEvaluacion> criterios = seccionId == null
+                ? java.util.List.of()
+                : criterioEvaluacionRepository.listBySeccionId(seccionId);
+        if (criterios.isEmpty()) {
+            AlumnoCurso ac = alumnoCursoRepository.findById(alumnoCursoId);
+            if (ac != null && ac.curso_id != null) {
+                criterios = criterioEvaluacionRepository.listByCursoId(ac.curso_id);
+            }
+        }
         return criterios.stream().map(ce -> {
             Nota n = notaRepository.findByAlumnoCursoAndCriterio(alumnoCursoId, ce.id);
             String notaAlumnoStr = (n == null || n.nota_alumno == null)
@@ -82,6 +96,17 @@ public class AlumnoServiceImpl implements AlumnoService {
 
     private String firstDocenteNombreOrdenado(Long cursoId) {
         List<DocenteCurso> dcs = docenteCursoRepository.listByCursoId(cursoId);
+        return dcs.stream()
+                .filter(dc -> Boolean.TRUE.equals(dc.activo))
+                .map(dc -> usuarioRepository.findById(dc.usuario_id))
+                .filter(Objects::nonNull)
+                .map(u -> (u.nombre + " " + u.paterno + " " + u.materno).trim())
+                .sorted()
+                .findFirst().orElse(null);
+    }
+
+    private String firstDocenteNombreOrdenadoPorSeccion(Long seccionId) {
+        List<DocenteCurso> dcs = docenteCursoRepository.listBySeccionId(seccionId);
         return dcs.stream()
                 .filter(dc -> Boolean.TRUE.equals(dc.activo))
                 .map(dc -> usuarioRepository.findById(dc.usuario_id))

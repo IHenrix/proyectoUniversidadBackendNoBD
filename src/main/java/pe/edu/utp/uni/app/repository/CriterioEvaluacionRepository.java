@@ -7,4 +7,5 @@ import java.util.List;
 public interface CriterioEvaluacionRepository {
     CriterioEvaluacion save(CriterioEvaluacion ce);
     List<CriterioEvaluacion> listByCursoId(Long cursoId);
+    List<CriterioEvaluacion> listBySeccionId(Long seccionId);
 }

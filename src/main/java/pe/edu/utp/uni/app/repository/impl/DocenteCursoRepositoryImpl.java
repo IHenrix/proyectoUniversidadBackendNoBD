@@ -17,6 +17,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 public class DocenteCursoRepositoryImpl implements DocenteCursoRepository {
     private final Map<Long, DocenteCurso> store = new HashMap<>();
     private final Map<Long, SinglyLinkedList<DocenteCurso>> docentesPorCurso = new HashMap<>();
+    private final Map<Long, SinglyLinkedList<DocenteCurso>> docentesPorSeccion = new HashMap<>();
     private final AtomicLong seq = new AtomicLong(0);
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
     private final Map<Long, CircularSinglyLinkedList<DocenteCurso>> cursosPorDocente = new HashMap<>();
@@ -30,6 +31,7 @@ public class DocenteCursoRepositoryImpl implements DocenteCursoRepository {
             store.put(dc.id, dc);
             if (isNew) {
                 docentesPorCurso.computeIfAbsent(dc.curso_id, k -> new SinglyLinkedList<>()).addLast(dc);
+                if (dc.seccion_id != null) docentesPorSeccion.computeIfAbsent(dc.seccion_id, k -> new SinglyLinkedList<>()).addLast(dc);
                 cursosPorDocente.computeIfAbsent(dc.usuario_id, k -> new CircularSinglyLinkedList<>()).addLast(dc);
             }
             return dc;
@@ -57,6 +59,18 @@ public class DocenteCursoRepositoryImpl implements DocenteCursoRepository {
             var start = clist.head();
             var n = start;
             do { out.add(n.value); n = n.next; } while (n != null && n != start);
+            return out;
+        } finally { lock.readLock().unlock(); }
+    }
+
+    @Override
+    public List<DocenteCurso> listBySeccionId(Long seccionId) {
+        lock.readLock().lock();
+        try {
+            var list = docentesPorSeccion.get(seccionId);
+            var out = new ArrayList<DocenteCurso>();
+            if (list == null) return out;
+            for (var n = list.head(); n != null; n = n.next) out.add(n.value);
             return out;
         } finally { lock.readLock().unlock(); }
     }

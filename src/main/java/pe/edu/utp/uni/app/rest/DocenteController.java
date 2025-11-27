@@ -16,28 +16,29 @@ import java.util.List;
 public class DocenteController {
     private final DocenteService docenteService;
 
-    @GetMapping("/cursos")
+    @GetMapping("/secciones")
     public ResponseEntity<?> listarCursosDocente(@RequestParam("docenteId") Long docenteId) {
-        List<CursoDocenteResponse> cursos = docenteService.listarCursosDeDocente(docenteId);
+        List<CursoDocenteResponse> cursos = docenteService.listarSeccionesDeDocente(docenteId);
         return ResponseEntity.ok(cursos);
     }
 
-    @GetMapping("/cursos/alumnos")
-    public ResponseEntity<?> listarAlumnosPorCursos(@RequestParam("cursoId") Long cursoId) {
-        List<AlumnoListaCursoResponse> usuarios = docenteService.listarAlumnosPorCurso(cursoId);
+    @GetMapping("/secciones/alumnos")
+    public ResponseEntity<?> listarAlumnosPorCursos(@RequestParam("seccionId") Long seccionId) {
+        List<AlumnoListaCursoResponse> usuarios = docenteService.listarAlumnosPorSeccion(seccionId);
         return ResponseEntity.ok(usuarios);
     }
 
     @PostMapping("/registrar-editar-notas")
     public ResponseEntity<?> registrarEditarNotas(@RequestBody RegistrarEditarNotasRequest req) {
-        docenteService.registrarOEditarNotas(req.alumnoCursoId, req.cursoId, req.notas);
-        return ResponseEntity.ok(java.util.Map.of("message","Notas registradas o editadas con éxito"));
+        docenteService.registrarOEditarNotas(req.alumnoCursoId, req.seccionId, req.notas);
+        return ResponseEntity.ok(java.util.Map.of("message","Notas registradas o editadas con exito"));
     }
-    @DeleteMapping("/nota/{notaId}/alumno/{alumnoCursoId}")
+    @DeleteMapping("/nota/{notaId}/alumno/{alumnoCursoId}/seccion/{seccionId}")
     public ResponseEntity<?> eliminarNota(@PathVariable Long notaId,
-                                          @PathVariable Long alumnoCursoId) {
-        int filas = docenteService.eliminarNota(notaId, alumnoCursoId);
-        if (filas > 0) return ResponseEntity.ok(java.util.Map.of("message","Nota eliminada con éxito"));
+                                          @PathVariable Long alumnoCursoId,
+                                          @PathVariable Long seccionId) {
+        int filas = docenteService.eliminarNota(notaId, alumnoCursoId, seccionId);
+        if (filas > 0) return ResponseEntity.ok(java.util.Map.of("message","Nota eliminada con exito"));
         return ResponseEntity.status(404).body(java.util.Map.of("message","Nota no encontrada"));
     }
 }
