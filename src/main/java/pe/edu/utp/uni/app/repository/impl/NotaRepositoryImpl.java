@@ -12,7 +12,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 @Repository
 public class NotaRepositoryImpl implements NotaRepository {
     private final Map<Long, Nota> store = new HashMap<>();
-    private final Map<Long, Map<Long, Nota>> byAlumnoCursoThenCriterio = new HashMap<>();
+    private final Map<Long, Map<Long, Nota>> byMatriculaThenCriterio = new HashMap<>();
     private final AtomicLong seq = new AtomicLong(0);
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 
@@ -22,8 +22,8 @@ public class NotaRepositoryImpl implements NotaRepository {
         try {
             if (n.id == null) n.id = seq.incrementAndGet();
             store.put(n.id, n);
-            byAlumnoCursoThenCriterio
-                    .computeIfAbsent(n.alumno_curso_id, k -> new HashMap<>())
+            byMatriculaThenCriterio
+                    .computeIfAbsent(n.matricula_id, k -> new HashMap<>())
                     .put(n.criterio_id, n);
             return n;
         } finally {
@@ -32,10 +32,10 @@ public class NotaRepositoryImpl implements NotaRepository {
     }
 
     @Override
-    public Nota findByAlumnoCursoAndCriterio(Long alumnoCursoId, Long criterioId) {
+    public Nota findByMatriculaAndCriterio(Long matriculaId, Long criterioId) {
         lock.readLock().lock();
         try {
-            Map<Long, Nota> m = byAlumnoCursoThenCriterio.get(alumnoCursoId);
+            Map<Long, Nota> m = byMatriculaThenCriterio.get(matriculaId);
             return m == null ? null : m.get(criterioId);
         } finally {
             lock.readLock().unlock();
@@ -43,14 +43,14 @@ public class NotaRepositoryImpl implements NotaRepository {
     }
 
     @Override
-    public void deleteByAlumnoCursoAndCriterio(Long alumnoCursoId, Long criterioId) {
+    public void deleteByMatriculaAndCriterio(Long matriculaId, Long criterioId) {
         lock.writeLock().lock();
         try {
-            Map<Long, Nota> m = byAlumnoCursoThenCriterio.get(alumnoCursoId);
+            Map<Long, Nota> m = byMatriculaThenCriterio.get(matriculaId);
             if (m != null) {
                 Nota removed = m.remove(criterioId);
                 if (removed != null) store.remove(removed.id);
-                if (m.isEmpty()) byAlumnoCursoThenCriterio.remove(alumnoCursoId);
+                if (m.isEmpty()) byMatriculaThenCriterio.remove(matriculaId);
             }
         } finally {
             lock.writeLock().unlock();
@@ -70,10 +70,10 @@ public class NotaRepositoryImpl implements NotaRepository {
         try {
             Nota n = store.remove(id);
             if (n != null) {
-                Map<Long, Nota> m = byAlumnoCursoThenCriterio.get(n.alumno_curso_id);
+                Map<Long, Nota> m = byMatriculaThenCriterio.get(n.matricula_id);
                 if (m != null) {
                     m.remove(n.criterio_id);
-                    if (m.isEmpty()) byAlumnoCursoThenCriterio.remove(n.alumno_curso_id);
+                    if (m.isEmpty()) byMatriculaThenCriterio.remove(n.matricula_id);
                 }
             }
         } finally { lock.writeLock().unlock(); }

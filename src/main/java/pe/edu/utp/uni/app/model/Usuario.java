@@ -1,5 +1,7 @@
 package pe.edu.utp.uni.app.model;
 
+import java.time.LocalDateTime;
+
 public class Usuario {
     public Long id;
     public String username;
@@ -13,7 +15,14 @@ public class Usuario {
     public Long rol_id;
     public Boolean activo;
 
-    public Usuario() {}
+    // Timestamps
+    public LocalDateTime createdAt;
+    public LocalDateTime updatedAt;
+
+    public Usuario() {
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
+    }
 
     public Usuario(Long id, String username, String passw, String nombre, String paterno, String materno,
                    String sexo, String correo, String codigo, Long rol_id, Boolean activo) {
@@ -28,5 +37,11 @@ public class Usuario {
         this.codigo = codigo;
         this.rol_id = rol_id;
         this.activo = activo;
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public String getNombreCompleto() {
+        return nombre + " " + paterno + " " + materno;
     }
 }

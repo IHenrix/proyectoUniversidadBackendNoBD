@@ -2,13 +2,7 @@ package pe.edu.utp.uni.app.service.impl;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import pe.edu.utp.uni.app.model.CriterioEvaluacion;
-import pe.edu.utp.uni.app.model.Curso;
-import pe.edu.utp.uni.app.model.Seccion;
-import pe.edu.utp.uni.app.model.Nota;
-import pe.edu.utp.uni.app.model.Usuario;
-import pe.edu.utp.uni.app.model.relationship.AlumnoCurso;
-import pe.edu.utp.uni.app.model.relationship.DocenteCurso;
+import pe.edu.utp.uni.app.model.*;
 import pe.edu.utp.uni.app.repository.*;
 import pe.edu.utp.uni.app.response.CursoAlumnoResponse;
 import pe.edu.utp.uni.app.response.NotasAlumnosResponse;
@@ -18,31 +12,36 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
+
 @Service
 @RequiredArgsConstructor
 public class AlumnoServiceImpl implements AlumnoService {
 
-    private final AlumnoCursoRepository alumnoCursoRepository;
+    private final MatriculaRepository matriculaRepository;
     private final CursoRepository cursoRepository;
-    private final DocenteCursoRepository docenteCursoRepository;
+    private final DocenteSeccionRepository docenteSeccionRepository;
     private final UsuarioRepository usuarioRepository;
     private final CriterioEvaluacionRepository criterioEvaluacionRepository;
     private final NotaRepository notaRepository;
     private final SeccionRepository seccionRepository;
+
     @Override
     public List<CursoAlumnoResponse> listarSeccionesPorUsuario(Long usuarioId) {
-        List<AlumnoCurso> acs = alumnoCursoRepository.listByUsuarioId(usuarioId);
+        List<Matricula> matriculas = matriculaRepository.findByAlumnoId(usuarioId);
         Usuario alumno = usuarioRepository.findById(usuarioId);
         String alumnoNombre = alumno == null ? null : (alumno.nombre + " " + alumno.paterno + " " + alumno.materno).trim();
 
-        return acs.stream()
-                .filter(ac -> Boolean.TRUE.equals(ac.activo))
-                .map(ac -> {
-                    Seccion seccion = ac.seccion_id == null ? null : seccionRepository.findById(ac.seccion_id);
-                    Curso c = cursoRepository.findById(ac.curso_id);
-                    String docenteNombre = seccion != null ? firstDocenteNombreOrdenadoPorSeccion(seccion.id) : firstDocenteNombreOrdenado(ac.curso_id);
-                    String notaAlumnoFinalStr = ac.nota_alumno_final == null ? null
-                            : String.format("%02d", ac.nota_alumno_final.intValue());
+        return matriculas.stream()
+                .filter(m -> Boolean.TRUE.equals(m.activo))
+                .map(m -> {
+                    Seccion seccion = m.seccion_id == null ? null : seccionRepository.findById(m.seccion_id);
+                    Curso c = seccion == null ? null : cursoRepository.findById(seccion.curso_id);
+                    String docenteNombre = seccion != null ? firstDocenteNombreOrdenadoPorSeccion(seccion.id) : null;
+
+                    // Calcular nota final a partir de los criterios
+                    Double notaFinal = calcularNotaFinal(m.id, seccion == null ? null : seccion.id);
+                    String notaAlumnoFinalStr = notaFinal == null ? null : String.format("%02d", notaFinal.intValue());
+
                     return new CursoAlumnoResponse(
                             c == null ? null : c.id,
                             seccion == null ? null : seccion.id,
@@ -54,11 +53,11 @@ public class AlumnoServiceImpl implements AlumnoService {
                             seccion == null ? java.util.List.of() : seccion.horarios,
                             alumnoNombre,
                             docenteNombre,
-                            ac.id,
-                            ac.usuario_id,
-                            ac.nota_final,
+                            m.id,
+                            m.alumno_id,
+                            notaFinal,
                             notaAlumnoFinalStr,
-                            ac.estado
+                            m.activo ? "A" : "I"  // Estado basado en activo
                     );
                 })
                 .sorted(Comparator.comparing(r -> r.curso == null ? "" : r.curso))
@@ -66,18 +65,21 @@ public class AlumnoServiceImpl implements AlumnoService {
     }
 
     @Override
-    public List<NotasAlumnosResponse> listarNotasAlumnos(Long seccionId, Long alumnoCursoId) {
+    public List<NotasAlumnosResponse> listarNotasAlumnos(Long seccionId, Long matriculaId) {
         List<CriterioEvaluacion> criterios = seccionId == null
                 ? java.util.List.of()
                 : criterioEvaluacionRepository.listBySeccionId(seccionId);
         if (criterios.isEmpty()) {
-            AlumnoCurso ac = alumnoCursoRepository.findById(alumnoCursoId);
-            if (ac != null && ac.curso_id != null) {
-                criterios = criterioEvaluacionRepository.listByCursoId(ac.curso_id);
+            Matricula m = matriculaRepository.findById(matriculaId);
+            if (m != null && m.seccion_id != null) {
+                Seccion seccion = seccionRepository.findById(m.seccion_id);
+                if (seccion != null && seccion.curso_id != null) {
+                    criterios = criterioEvaluacionRepository.listByCursoId(seccion.curso_id);
+                }
             }
         }
         return criterios.stream().map(ce -> {
-            Nota n = notaRepository.findByAlumnoCursoAndCriterio(alumnoCursoId, ce.id);
+            Nota n = notaRepository.findByMatriculaAndCriterio(matriculaId, ce.id);
             String notaAlumnoStr = (n == null || n.nota_alumno == null)
                     ? null
                     : String.format("%02d", n.nota_alumno.intValue());
@@ -94,26 +96,38 @@ public class AlumnoServiceImpl implements AlumnoService {
         }).collect(Collectors.toList());
     }
 
-    private String firstDocenteNombreOrdenado(Long cursoId) {
-        List<DocenteCurso> dcs = docenteCursoRepository.listByCursoId(cursoId);
-        return dcs.stream()
-                .filter(dc -> Boolean.TRUE.equals(dc.activo))
-                .map(dc -> usuarioRepository.findById(dc.usuario_id))
+    private String firstDocenteNombreOrdenadoPorSeccion(Long seccionId) {
+        List<DocenteSeccion> dss = docenteSeccionRepository.findBySeccionId(seccionId);
+        return dss.stream()
+                .filter(ds -> Boolean.TRUE.equals(ds.activo))
+                .map(ds -> usuarioRepository.findById(ds.docente_id))
                 .filter(Objects::nonNull)
                 .map(u -> (u.nombre + " " + u.paterno + " " + u.materno).trim())
                 .sorted()
                 .findFirst().orElse(null);
     }
 
-    private String firstDocenteNombreOrdenadoPorSeccion(Long seccionId) {
-        List<DocenteCurso> dcs = docenteCursoRepository.listBySeccionId(seccionId);
-        return dcs.stream()
-                .filter(dc -> Boolean.TRUE.equals(dc.activo))
-                .map(dc -> usuarioRepository.findById(dc.usuario_id))
-                .filter(Objects::nonNull)
-                .map(u -> (u.nombre + " " + u.paterno + " " + u.materno).trim())
-                .sorted()
-                .findFirst().orElse(null);
+    /**
+     * Calcula la nota final sumando los criterios ponderados
+     */
+    private Double calcularNotaFinal(Long matriculaId, Long seccionId) {
+        if (seccionId == null) return null;
+
+        List<CriterioEvaluacion> criterios = criterioEvaluacionRepository.listBySeccionId(seccionId);
+        if (criterios.isEmpty()) return null;
+
+        double sumaTotal = 0.0;
+        double sumaPonderacion = 0.0;
+
+        for (CriterioEvaluacion ce : criterios) {
+            Nota n = notaRepository.findByMatriculaAndCriterio(matriculaId, ce.id);
+            if (n != null && n.nota_alumno != null && ce.porcentaje != null) {
+                sumaTotal += (n.nota_alumno * ce.porcentaje / 100.0);
+                sumaPonderacion += ce.porcentaje;
+            }
+        }
+
+        return sumaPonderacion > 0 ? sumaTotal : null;
     }
 
     @Override
@@ -121,13 +135,20 @@ public class AlumnoServiceImpl implements AlumnoService {
         Usuario alumno = usuarioRepository.findById(usuarioId);
         Seccion seccion = seccionRepository.findById(seccionId);
         if (alumno == null || seccion == null) return null;
-        // evitar duplicado
-        boolean yaInscrito = alumnoCursoRepository.listByUsuarioId(usuarioId).stream()
-                .anyMatch(ac -> ac.seccion_id != null && ac.seccion_id.equals(seccionId));
-        if (yaInscrito) return null;
 
-        AlumnoCurso nuevo = new AlumnoCurso(null, usuarioId, seccion.curso_id, seccionId, "E", null, null, null, true);
-        alumnoCursoRepository.save(nuevo);
+        // Verificar que haya vacantes
+        if (!seccion.tieneVacantes()) return null;
+
+        // Evitar duplicado
+        Matricula existente = matriculaRepository.findByAlumnoAndSeccion(usuarioId, seccionId);
+        if (existente != null && existente.activo) return null;
+
+        Matricula nueva = new Matricula(null, usuarioId, seccionId);
+        matriculaRepository.save(nueva);
+
+        // Ocupar vacante
+        seccion.ocuparVacante();
+        seccionRepository.save(seccion);
 
         String alumnoNombre = (alumno.nombre + " " + alumno.paterno + " " + alumno.materno).trim();
         String docenteNombre = firstDocenteNombreOrdenadoPorSeccion(seccion.id);
@@ -143,20 +164,25 @@ public class AlumnoServiceImpl implements AlumnoService {
                 seccion.horarios,
                 alumnoNombre,
                 docenteNombre,
-                nuevo.id,
-                nuevo.usuario_id,
+                nueva.id,
+                nueva.alumno_id,
                 null,
                 null,
-                "E"
+                "A"  // Activo
         );
     }
 
     @Override
     public List<CursoAlumnoResponse> listarSeccionesDisponibles(Long usuarioId) {
-        List<Long> inscritos = alumnoCursoRepository.listByUsuarioId(usuarioId).stream()
-                .map(ac -> ac.seccion_id).filter(Objects::nonNull).collect(Collectors.toList());
+        List<Long> inscritos = matriculaRepository.findByAlumnoId(usuarioId).stream()
+                .filter(m -> Boolean.TRUE.equals(m.activo))
+                .map(m -> m.seccion_id)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+
         return seccionRepository.findAll().stream()
                 .filter(s -> s.id != null && !inscritos.contains(s.id))
+                .filter(s -> s.tieneVacantes())  // Solo mostrar secciones con vacantes
                 .map(seccion -> {
                     Curso c = cursoRepository.findById(seccion.curso_id);
                     String docenteNombre = firstDocenteNombreOrdenadoPorSeccion(seccion.id);

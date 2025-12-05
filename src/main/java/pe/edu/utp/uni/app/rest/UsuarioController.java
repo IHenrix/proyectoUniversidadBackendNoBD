@@ -25,4 +25,5 @@ public class UsuarioController {
         if (u == null) return ResponseEntity.noContent().build();
         return ResponseEntity.ok(u);
     }
+
 }
